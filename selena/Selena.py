@@ -34,11 +34,9 @@ The main module for the selena emulation control.
 
 from selena.SelenaLogger import slog, LOG_LEVELS, S_DEBUG, S_INFO, S_WARN, S_ERROR, S_INFO, S_CRIT
 from XcpManager import XcpManager
-#from Scenario import Scenario
 from CommandTools import CommandTools
 import sys
 import time
-#import pprint
 from Singleton import Singleton
 from selena.TemplatesDB import templatesDB
 import os

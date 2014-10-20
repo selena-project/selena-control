@@ -40,7 +40,7 @@ class XcpManager(object):
     XAPI = None
 
 
-    def __init__(self,  pUrl="localhost", pUserName="root", pPasswd="root"):
+    def __init__(self,  pUrl="localhost", pUserName="root", pPasswd="selenasrg"):
         '''
         Constructor
         '''
