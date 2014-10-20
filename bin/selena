@@ -1,0 +1,221 @@
+#!/usr/bin/env python
+
+#---------------------------------------------------------------------
+#   Copyright (C) 2014 Dimosthenis Pediaditakis.
+#
+#   All rights reserved.
+#
+#   Redistribution and use in source and binary forms, with or without
+#   modification, are permitted provided that the following conditions
+#   are met:
+#     1. Redistributions of source code must retain the above copyright
+#        notice, this list of conditions and the following disclaimer.
+#     2. Redistributions in binary form must reproduce the above copyright
+#        notice, this list of conditions and the following disclaimer in the
+#        documentation and/or other materials provided with the distribution.
+#   THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+#   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#   ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+#   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+#   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+#   OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+#   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+#   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+#   SUCH DAMAGE.
+#---------------------------------------------------------------------
+
+import selena
+from selena.Selena import Selena, S_EXIT
+from selena.SelenaLogger import slog, LOG_LEVELS, S_DEBUG, S_INFO, S_WARN, S_ERROR, S_INFO, S_CRIT
+from selena.TemplatesDB import importTemplates
+from optparse import OptionParser
+import os
+import sys
+import time
+import json
+from jsonschema import (Draft4Validator, FormatChecker, ValidationError, SchemaError, FormatError)
+from jsonschema.exceptions import UnknownType
+from pkg_resources import resource_string
+
+options = []
+args = []
+selenaI = None
+
+def printVersion(*args):
+    """
+    Prints the current version of Selena.
+    """
+    print "Selena version %s.%s" % (selena.__version__, selena.__release__)
+    exit()
+
+def parseCheckArguments():
+    """
+    This method processes the options and argument that users provide through command=line.
+    If erroneous input combinations are detected, the program exits.
+    """
+    global options
+    global args
+    #print "Parsing arguments from command line"
+
+    parser = OptionParser(description='This %prog utility creates a Selena emulation management instance '
+                                      'which can create / configure / execute / remove a virtual-network '
+                                      'experiment specified by the user',
+                          usage='%prog [options] [experimentDescription]')
+
+    parser.add_option('-v', '--version',
+                      action='callback',
+                      callback=printVersion,
+                      help='Print the version and exit.')
+    parser.add_option('-i', '--install',
+                      action='store_true',
+                      dest='sel_install',
+                      default=False,
+                      help='Attempt to create the VMs for the specified experiment description')
+    parser.add_option('-u', '--uninstall',
+                      action='store_true',
+                      dest='sel_uninstall',
+                      default=False,
+                      help='Attempt to shutdown all VMs of the specified experiment and destroy them')
+    parser.add_option('-k', '--kill',
+                      action='store_true',
+                      dest='sel_kill',
+                      default=False,
+                      help='Shutdown all running VMs of the specified experiment')
+    parser.add_option('-s', '--start',
+                      action='store_true',
+                      dest='sel_start',
+                      default=False,
+                      help='Start and configure all VMs of the specified experiment')
+    parser.add_option('-r', '--restart',
+                      action='store_true',
+                      dest='sel_restart',
+                      default=False,
+                      help='Restart and re-configure all VMs of the specified experiment (halt all, reset net, start all, configure)')
+    parser.add_option('-t', '--test',
+                      action='store_true',
+                      dest='sel_test',
+                      default=False, help='Run a quick diagnostic test')
+    parser.add_option('-l', '--logging',
+                      type='choice',
+                      choices=LOG_LEVELS.keys(),
+                      dest='loglevel',
+                      default='INFO',
+                      help='Specifies the logging level:'+' | '.join(LOG_LEVELS.keys()))
+    parser.add_option('-c', '--config',
+                      action='store',
+                      dest='jsonconfig',
+                      default=False,
+                      help='Specifies a custom JSON configuration file for Selena')
+    options, args = parser.parse_args()
+
+    # Check if user has supplied any options, if not then print help
+    optsCount = 0
+    for var in dir(options):
+        if var.startswith('sel_') and getattr(options, var):
+            optsCount += 1
+    if optsCount < 1:
+        parser.print_usage()
+        S_EXIT("You need to specify at LEAST one option\n")
+    elif optsCount >= 2:
+        parser.print_usage()
+        S_EXIT("You cannot specify more than one options at the same time (excluding the LOGGING option)\n")
+
+    if len(args) > 1:
+        parser.print_usage()
+        S_EXIT("You cannot provide more than one arguments\n")
+
+    if not (args or options.sel_test):
+        parser.print_usage()
+        S_EXIT("You need to provide an argument with the experiment module name\n")
+
+
+
+
+
+
+
+
+def configureSelena():
+    """
+    This method initializes Selena's configuration using the default  (or a custom) JSON configuration file.
+
+    :param selenaI: The instance of Selena that needs to be configured
+    :return: The dictionary with Selena's configuration if the JSON file passes validation, None otherwise
+    """
+    S_DEBUG("Initializing Selena using custom configuration: %s" % ('selenaConfig.json' if not options.jsonconfig else options.jsonconfig))
+    # Load the default JSON configuration file
+    selena_config = resource_string("selena", 'selenaConfig.json')
+    # Check if user has supplied a custom configuration and load this instead
+    if options.jsonconfig:
+        try:
+            f = open(options.jsonconfig, 'r')
+            selena_config = f.read()
+            f.close()
+        except IOError:
+            S_CRIT("Could not find JSON configuration file \'%s\'\n" % (options.jsonconfig))
+            return False
+    # Load the JSON schema, used to validate the configurations against
+    selena_jsonSchema = json.loads(resource_string("selena", 'selenaConfigSchema.json'))
+    S_DEBUG("Selena configuration follows:\n%s", str(selena_config))
+    validator = Draft4Validator(selena_jsonSchema, format_checker=FormatChecker())
+    # Perform the validation
+    selena_config = json.loads(selena_config)
+    try:
+        validator.validate(selena_config)
+    except ValidationError as e:
+        print e
+        S_CRIT("Selena JSON configuration file failed the validation test\n")
+        return None
+    except SchemaError as e:
+        print e
+        S_CRIT("Selena JSON schema file failed the validation test'\n")
+        return None
+    except UnknownType as e:
+        print e
+        S_CRIT("Selena JSON configuration file uses an illegal type\n")
+        return None
+    except FormatError as e:
+        print e
+        S_CRIT("Selena JSON configuration file specifies a value which does not comply with the JSON schema\n")
+        return None
+    return selena_config
+
+
+def letsGetStarted():
+    if options.sel_install:
+        print "installing"
+        selenaI.selenaDo_installScenario(args[0])
+    elif options.sel_uninstall:
+        selenaI.selenaDo_uninstallScenario(args[0])
+    elif options.sel_start:
+        selenaI.selenaDo_startScenario(args[0])
+    elif options.sel_kill:
+        selenaI.selenaDo_killScenario(args[0])
+    else:
+        S_EXIT("Option is not yet implemented")
+
+if __name__ == "__main__":
+    # Parse the user-supplied arguments and check their validity
+    parseCheckArguments()
+
+    # Set the logging level
+    slog.setAllLevels(LOG_LEVELS[options.loglevel.upper()])
+
+    # Configure Selena based on the json configuration description files
+    selena_config = configureSelena()
+    if not selena_config:
+        S_EXIT("Failed to load Selena's global configuration.")
+
+    # Import the templates from the JSON specification
+    importTemplates(selena_config['SelenaTemplates'])
+
+    # Create the main Selena instance
+    selenaI = Selena(selena_config, package=selena.__title__, version="%s.%s" % (selena.__version__, selena.__release__))
+    S_DEBUG('Created the main Selena instance')
+
+    # Ask selena to execute the user-requested action
+    letsGetStarted()
+
+    print "Exiting Selena now ..."

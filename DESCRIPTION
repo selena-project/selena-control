@@ -1,0 +1,4 @@
+This is the main counterpart of the Selena emulation framework.
+It includes the core management engine which can create, deploy and destroy/clean an experiment.
+It typically runs in the control domain (Dom0) of Xen
+

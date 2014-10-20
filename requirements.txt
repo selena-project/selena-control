@@ -1,0 +1,5 @@
+setuptools
+docutils
+Sphinx
+jsonschema
+rfc3987

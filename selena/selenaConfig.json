@@ -1,0 +1,60 @@
+{
+    "XenServerConfig": {
+        "XCP_url": "http://localhost",
+        "XCP_uname": "root",
+        "XCP_passwd": "selenasrg"
+    },
+
+    "SelenaMetaInfo": {
+        "SELENA_VM_KEYWORD": "SELENA_VM",
+        "SELENA_NET_KEYWORD": "SELENA_NET",
+        "SELENA_VDI_KEYWORD": "SELENA_VDI",
+        "SELENA_VBD_KEYWORD": "SELENA_VBD"
+    },
+
+    "SelenaManagementNet": {
+        "SELENA_MGMT_NET_NAME": "SELENA_MANAGEMENT_NET",
+        "SELENA_MGMT_NET_IP": "192.168.254.1",
+        "SELENA_MGMT_NETADDR": "192.168.254.0",
+        "SELENA_MGMT_NET_MASK": "255.255.255.0"
+    },
+
+    "SelenaTemplates": [
+        {
+            "Name": "LINUX_HOST",
+            "PV_kernel": "/boot/guest/vmlinuz-3.10.11-1tdf-amd64",
+            "PV_ramdisk": "/boot/guest/initrd.img-3.10.11-1tdf-amd64",
+            "PV_args": "root=UUID=45dd90ef-23c2-479b-86a5-78fa864dd249 ro console=hvc0 quiet",
+            "PV_bootloader": "",
+            "PV_bootloader_args": "",
+            "VDI_UUID": "e18b569d-e69c-4fdd-8bec-48e66430a0c3"
+        },
+        {
+            "Name": "LINUX_OVS",
+            "PV_kernel": "/boot/guest/vmlinuz-3.10.11-1tdf-amd64",
+            "PV_ramdisk": "/boot/guest/initrd.img-3.10.11-1tdf-amd64",
+            "PV_args": "root=UUID=45dd90ef-23c2-479b-86a5-78fa864dd249 ro console=hvc0 quiet",
+            "PV_bootloader": "",
+            "PV_bootloader_args": "",
+            "VDI_UUID": "ef5dd799-0bd0-488d-9458-2b8ca9ce4548"
+        },
+        {
+            "Name": "MIRAGE_SWITCH",
+            "PV_kernel": "/boot/guest/ofswitch.xen",
+            "PV_ramdisk": "",
+            "PV_args": "",
+            "PV_bootloader": "",
+            "PV_bootloader_args": "",
+            "VDI_UUID": ""
+        },
+        {
+            "Name": "OF_CONTROLLER",
+            "PV_kernel": "/boot/guest/vmlinuz-3.10.11-1tdf-amd64",
+            "PV_ramdisk": "/boot/guest/initrd.img-3.10.11-1tdf-amd64",
+            "PV_args": "root=UUID=45dd90ef-23c2-479b-86a5-78fa864dd249 ro console=hvc0 quiet",
+            "PV_bootloader": "",
+            "PV_bootloader_args": "",
+            "VDI_UUID": "b9922c34-66d6-4d7b-81ea-4dd143285290"
+        }
+    ]
+}

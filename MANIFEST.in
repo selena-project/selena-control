@@ -1,0 +1,33 @@
+include DESCRIPTION
+include INSTALL
+include LICENSE
+include README.rst
+include VERSION
+include Makefile
+
+# Include the Selena global configuration file
+include selena/selenaConfig.json
+include selena/selenaConfigSchema.json
+
+# Include the bin dir
+graft bin
+
+# Examples
+graft examples
+
+# Documentation
+graft docs
+
+# Do not include some docs subdirs
+prune docs/build
+prune docs/gh-pages
+prune docs/dist
+
+# Patterns to exclude from any directory
+global-exclude *~
+global-exclude *.flc
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.log
+global-exclude .git
+

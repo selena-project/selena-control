@@ -1,0 +1,32 @@
+Introduction
+============
+
+What is SELENA?
+===============
+
+SELENA is an holistic network experimentation tool supporting reproducibility
+and exposing explicit control on the trade-off between scalability and
+fidelity. It is based on the XEN-hypervisor.
+
+.. container:: feature
+
+    .. image:: _static/TARDIS_by_Ambient_Lullaby.jpg 
+        :name: Time Dilation
+        :class: imglabel
+
+    *Time dilation* functionality scales guests’ view of physical resources
+    helping to accurately model complex net- works. 
+
+.. container:: feature
+
+    .. image:: _static/TARDIS_by_Ambient_Lullaby.jpg 
+        :name: Time Dilation
+        :class: imglabel
+
+    *Reproducibilty* through a pythonic experiment description API, 
+    which automates deployment and execution, and support for any paravirtualized (PV) guest, requires zero modifica-
+    tions and provides full POSIX compatibility. Real-world appli-
+    cations and network stacks can be directly tested on our platform.
+
+
+ 
