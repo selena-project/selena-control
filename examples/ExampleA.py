@@ -165,7 +165,7 @@ class ExampleA(Scenario):
             if node['TYPE'] == 'LINUX_OVS':
                 bridge = 'br0'
                 #self.pushCommand(nId, 'ovs-vsctl del-br %s; ovs-vsctl add-br %s' % (bridge, bridge))
-                self.pushCommand(nId, 'ovs-vsctl del-br %s; ovs-vsctl add-br %s; ovs-vsctl del-fail-mode %s; ovs-vsctl set-fail-mode %s secure' % (bridge, bridge, bridge, bridge))
+                self.pushCommand(nId, 'ovs-vsctl del-br %s; ovs-vsctl add-br %s; ovs-vsctl del-fail-mode %s; ovs-vsctl set-fail-mode %s standalone' % (bridge, bridge, bridge, bridge))
                 time.sleep(0.5)
                 for ifIndex in range(0, len( node['NETIFS'])):
                     (linuxIface, _) = self.getLinuxInterfaceCmd(ifIndex, node['NETIFS'][ifIndex][2], node['NETIFS'][ifIndex][3], node['NETIFS'][ifIndex][4], node['NETIFS'][ifIndex][0])
