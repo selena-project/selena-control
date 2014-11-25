@@ -412,6 +412,58 @@ class Selena(object):
                     link['META_CONFIGURED'] = True
                     link['META_XEN_NETWORK'] = net
                     #self.pp.pprint(link)
+        for hub in pScenario.HUBS:
+            if hub and not hub['META_CONFIGURED']:
+                # Select a network
+                net = None
+                net_id = ""
+                first = True
+
+                #construct network ids
+                node_name = "%s--%s--"%(Selena.SELENA_NET_KEYWORD, pScenario.name)
+                for (node, _) in hub["LINKS"]:
+                    node =  pScenario.EMU_NODES[node]
+                    preamble = "--"
+                    if first: preamble = ""
+                    net_id = "%s%s(%d)"%(preamble, node['NAME'], node['ID'])
+                    first = False
+
+                if len(self.XEN_NET_POOL) > 0: # re-use existing network
+                    net = self.XEN_NET_POOL.pop()
+                    self.xcpManager.do_UpdateNetwork(net, net_id, '1500', node_name)
+                else:  # create a new network
+                    net = self.xcpManager.do_CreateNetwork(net_id, '1500', node_name)
+                if not net:
+                    S_EXIT("Could not create network for link " + net_id)
+
+                # Now reset the bridge
+                bridgeIface = self.xcpManager.getNetworkBridgeDev(net)
+                self.EXEC.runCommand("sudo ovs-vsctl del-br " + bridgeIface)
+                (status, _) = self.EXEC.runCommand("sudo ovs-vsctl add-br " + bridgeIface)
+                if status:
+                    S_EXIT("Could not configure the bridge interface of network: %s" % (self.xcpManager.getNetworkUUID(net)))
+                (status, _) = self.EXEC.runCommand("sudo ifconfig " + bridgeIface + " up")
+                if status:
+                        S_EXIT("Oh snap... Could not bring up the bridge interface/bridge %s." % bridgeIface)
+
+                # Try to create the nodeA VIF
+                for (node, ifIx) in hub["LINKS"]:
+                    nodeObj =  pScenario.EMU_NODES[node]
+                    macAddr = ''
+                    if nodeObj['NETIFS'][ifIx][1] != "RANDOM": macAddr = nodeObj['NETIFS'][ifIx][1]
+                    linkDatarate = None
+                    if hub['RATE']:
+                        # the int isn't really necessary since both operands are int, just in case....
+                        linkDatarate = int((hub['RATE']*125)/pScenario.TDF)
+                        # we use +1 because device 0 is reserved for management interface
+                        vif = self.xcpManager.do_CreateVif(nodeObj['META_XEN_VMREF'], net, str(ifIx+1),
+                                                           macAddr, linkDatarate)
+                        if not vif:
+                            S_EXIT("Failed to create Link %s" % (net_id))
+                        nodeObj['META_XEN_VIFS'][ifIx] = vif
+                # Mark the link as configured and add META info
+                hub['META_CONFIGURED'] = True
+                hub['META_XEN_NETWORK'] = net
 
     def configureEmulationManagementNetwork(self, pScenario):
         # First make sure that the internal Emulation Management Network exists
